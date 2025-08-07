@@ -4,3 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.98"
+chrono = "0.4.41"
+fast_qr = { version = "0.13.1", features = ["image"] }
+image = "0.25.6"
+indicatif = "0.18.0"
+rusttype = "0.9.3"
+sha2 = "0.10.9"
+zip = "4.3.0"
