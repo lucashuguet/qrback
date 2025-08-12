@@ -9,7 +9,7 @@ use std::fs::File;
 use std::io;
 
 use anyhow::Result;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use sha2::{Digest, Sha256};
 
 #[derive(Parser, Debug)]
@@ -17,8 +17,18 @@ use sha2::{Digest, Sha256};
 struct Args {
     file: String,
 
-    #[arg(short, default_value = "a user editable message")]
+    #[arg(short, long, default_value = "a user editable message")]
     message: String,
+
+    #[arg(short, long, value_enum, default_value = "qr-code")]
+    variant: Variant,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum Variant {
+    QRCode,
+    Color8,
+    Color4,
 }
 
 fn main() -> Result<()> {
@@ -36,7 +46,7 @@ fn main() -> Result<()> {
         format!("{:x}", sha256.finalize())
     };
 
-    let qrcodes = generate_qrcodes(&mut file)?;
+    let qrcodes = generate_qrcodes(&mut file, &args.variant)?;
     let pages = generate_pages(qrcodes, &hash, &time, &args.message)?;
 
     save_document(&pages, &format!("{}.cbz", &args.file))?;
