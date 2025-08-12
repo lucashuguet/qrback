@@ -1,6 +1,6 @@
 use super::utils::create_text_image;
 
-use std::fs::OpenOptions;
+use std::fs::File;
 use std::io::{Cursor, Write};
 
 use anyhow::Result;
@@ -17,10 +17,7 @@ const MARGIN: i64 = 128;
 const HEADER_MARGIN: i64 = 108;
 
 pub fn save_document(pages: &[DynamicImage], output: &str) -> Result<()> {
-    let mut output = OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(output)?;
+    let mut output = File::create(output)?;
     let mut zip = ZipWriter::new(&mut output);
     let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
 

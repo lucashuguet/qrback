@@ -1,7 +1,19 @@
+use crate::Variant;
+
 use image::{DynamicImage, GenericImage, GenericImageView, Rgba};
 use rusttype::{point, Font, Scale};
 
 const FONT_SIZE: f32 = 64.0;
+
+impl Variant {
+    pub fn data_density(&self) -> usize {
+        match self {
+            &Variant::QRCode => 1,
+            &Variant::Color4 => 2,
+            &Variant::Color8 => 3,
+        }
+    }
+}
 
 pub fn create_text_image(
     width: u32,

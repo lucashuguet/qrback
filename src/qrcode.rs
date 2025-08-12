@@ -3,7 +3,7 @@ use crate::Variant;
 use super::document::QRSIZE;
 
 use std::fs::File;
-use std::io::{Cursor, Read, Seek, SeekFrom};
+use std::io::{Cursor, Read};
 
 use anyhow::Result;
 use fast_qr::convert::image::ImageBuilder;
@@ -13,16 +13,12 @@ use image::imageops::FilterType;
 use image::{DynamicImage, GenericImage, GenericImageView, ImageReader, Rgba};
 
 const CHUNK_SIZE: usize = 512;
-// const CHUNK_SIZE: usize = 2 * 512;
-// const CHUNK_SIZE: usize = 3 * 512;
 
 fn generate_4color_qrcode(data: &[u8]) -> Result<DynamicImage> {
-    if data.len() < 2 * 512 {
-        return Ok(DynamicImage::new_rgb8(QRSIZE as u32, QRSIZE as u32));
-    }
+    let size = data.len() / 2;
 
-    let mut qr1 = generate_qrcode(&data[0..512], "#0000ff".into())?; // blue
-    let qr2 = generate_qrcode(&data[512..1024], "#ffff00".into())?; // yellow
+    let mut qr1 = generate_qrcode(&data[0..size], "#0000ff".into())?; // blue
+    let qr2 = generate_qrcode(&data[size..], "#ffff00".into())?; // yellow
 
     for i in 0..qr1.width() {
         for j in 0..qr1.width() {
@@ -43,13 +39,11 @@ fn generate_4color_qrcode(data: &[u8]) -> Result<DynamicImage> {
 }
 
 fn generate_8color_qrcode(data: &[u8]) -> Result<DynamicImage> {
-    if data.len() < 3 * 512 {
-        return Ok(DynamicImage::new_rgb8(QRSIZE as u32, QRSIZE as u32));
-    }
+    let size = data.len() / 3;
 
-    let mut qr1 = generate_qrcode(&data[0..512], "#00ffff".into())?; // cyan
-    let qr2 = generate_qrcode(&data[512..1024], "#ff00ff".into())?; // magenta
-    let qr3 = generate_qrcode(&data[1024..1536], "#ffff00".into())?; // yellow
+    let mut qr1 = generate_qrcode(&data[0..size], "#00ffff".into())?; // cyan
+    let qr2 = generate_qrcode(&data[size..2 * size], "#ff00ff".into())?; // magenta
+    let qr3 = generate_qrcode(&data[2 * size..], "#ffff00".into())?; // yellow
 
     for i in 0..qr1.width() {
         for j in 0..qr1.width() {
@@ -76,10 +70,8 @@ fn generate_qrcode(data: &[u8], color: Color) -> Result<DynamicImage> {
         .ecl(fast_qr::ECL::L)
         .build()?;
 
-    // 77 is the width of a 512 bytes qrcode
     let bytes = ImageBuilder::default()
         .margin(0)
-        // .fit_width((qr.size * QRSIZE as usize / 77) as u32)
         .fit_width(qr.size as u32)
         .module_color(color)
         .to_bytes(&qr)?;
@@ -100,30 +92,13 @@ fn generate_variant(data: &[u8], variant: &Variant) -> Result<DynamicImage> {
 }
 
 pub fn generate_qrcodes(file: &mut File, variant: &Variant) -> Result<Vec<DynamicImage>> {
-    let file_size = file.metadata()?.len() as usize;
-    let mut data = Vec::new();
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)?;
 
-    let full_chunks = file_size / CHUNK_SIZE;
-    let remainder = file_size % CHUNK_SIZE;
+    let qrcodes = buffer
+        .chunks(CHUNK_SIZE * variant.data_density())
+        .map(|chunk| generate_variant(chunk, variant))
+        .collect::<Result<Vec<_>>>()?;
 
-    let mut buffer = vec![0u8; CHUNK_SIZE];
-
-    for i in 0..full_chunks {
-        file.seek(SeekFrom::Start((i * CHUNK_SIZE) as u64))?;
-        file.read_exact(&mut buffer)?;
-
-        let qrcode = generate_variant(&buffer, variant)?;
-        data.push(qrcode);
-    }
-
-    if remainder != 0 {
-        let mut buffer = vec![0u8; remainder];
-        file.seek(SeekFrom::Start((full_chunks * CHUNK_SIZE) as u64))?;
-        file.read_exact(&mut buffer)?;
-
-        let qrcode = generate_variant(&buffer, variant)?;
-        data.push(qrcode);
-    }
-
-    Ok(data)
+    Ok(qrcodes)
 }

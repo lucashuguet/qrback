@@ -5,8 +5,8 @@ mod utils;
 use document::{generate_pages, save_document};
 use qrcode::generate_qrcodes;
 
-use std::fs::File;
-use std::io;
+use std::io::{self, SeekFrom};
+use std::{fs::File, io::Seek};
 
 use anyhow::Result;
 use clap::{Parser, ValueEnum};
@@ -45,6 +45,8 @@ fn main() -> Result<()> {
         io::copy(&mut file, &mut sha256)?;
         format!("{:x}", sha256.finalize())
     };
+
+    file.seek(SeekFrom::Start(0))?;
 
     let qrcodes = generate_qrcodes(&mut file, &args.variant)?;
     let pages = generate_pages(qrcodes, &hash, &time, &args.message)?;
