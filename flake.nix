@@ -12,7 +12,8 @@
     devShells.${system}.default = pkgs.mkShell {
       packages = with pkgs; [
         openssl pkg-config cargo-nextest cargo-expand
-        qrencode zbar
+        zbar qrencode jabcode-reader jabcode-writer
+        grim slurp scrot
       ];
     };
   };
