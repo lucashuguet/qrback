@@ -9,6 +9,7 @@ chrono = "0.4.41"
 clap = { version = "4.5.44", features = ["derive"] }
 fast_qr = { version = "0.13.1", features = ["image"] }
 image = "0.25.6"
+jabcode = "1.1.0"
 rusttype = "0.9.3"
 sha2 = "0.10.9"
 zip = "4.3.0"

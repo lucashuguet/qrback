@@ -28,8 +28,10 @@ struct Args {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum Variant {
     QRCode,
-    Color8,
     Color4,
+    Color8,
+    JabCode4,
+    JabCode8,
 }
 
 fn main() -> Result<()> {
