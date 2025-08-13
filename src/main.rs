@@ -1,3 +1,4 @@
+mod constants;
 mod document;
 mod qrcode;
 mod utils;

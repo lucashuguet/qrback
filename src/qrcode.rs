@@ -1,6 +1,6 @@
 use crate::Variant;
 
-use super::document::QRSIZE;
+use super::constants::{CHUNK_SIZE, QRCODE_DEFAULT_SIZE, QRCODE_SIZE};
 
 use std::fs::File;
 use std::io::{Cursor, Read};
@@ -11,8 +11,6 @@ use fast_qr::convert::{Builder, Color};
 use fast_qr::QRBuilder;
 use image::imageops::FilterType;
 use image::{DynamicImage, GenericImage, GenericImageView, ImageReader, Rgba};
-
-const CHUNK_SIZE: usize = 512;
 
 fn generate_4color_qrcode(data: &[u8]) -> Result<DynamicImage> {
     let size = data.len() / 2;
@@ -88,7 +86,18 @@ fn generate_variant(data: &[u8], variant: &Variant) -> Result<DynamicImage> {
         Variant::Color4 => generate_4color_qrcode(data)?,
     };
 
-    Ok(image.resize(QRSIZE as u32, QRSIZE as u32, FilterType::Nearest))
+    let bordered = if image.width() < QRCODE_DEFAULT_SIZE {
+        let mut background = DynamicImage::new_rgb8(QRCODE_DEFAULT_SIZE, QRCODE_DEFAULT_SIZE);
+        background.invert();
+
+        let offset = (QRCODE_DEFAULT_SIZE - image.width()) / 2;
+        image::imageops::overlay(&mut background, &image, offset as i64, offset as i64);
+        background
+    } else {
+        image
+    };
+
+    Ok(bordered.resize(QRCODE_SIZE as u32, QRCODE_SIZE as u32, FilterType::Nearest))
 }
 
 pub fn generate_qrcodes(file: &mut File, variant: &Variant) -> Result<Vec<DynamicImage>> {

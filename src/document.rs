@@ -1,3 +1,6 @@
+use super::constants::{
+    GRID_SIZE, MARGIN_X, MARGIN_Y, PAGE_HEIGHT, PAGE_WIDTH, QRCODE_SIZE, TEXT_HEIGHT,
+};
 use super::utils::create_text_image;
 
 use std::fs::File;
@@ -7,14 +10,6 @@ use anyhow::Result;
 use image::DynamicImage;
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
-
-pub const QRSIZE: i64 = 1048;
-
-const GRID_SIZE: usize = 6;
-const PAGE_WIDTH: u32 = 2480;
-const PAGE_HEIGHT: u32 = 3508;
-const MARGIN: i64 = 128;
-const HEADER_MARGIN: i64 = 108;
 
 pub fn save_document(pages: &[DynamicImage], output: &str) -> Result<()> {
     let mut output = File::create(output)?;
@@ -51,24 +46,22 @@ pub fn generate_pages(
 
             let info_text_image = create_text_image(
                 PAGE_WIDTH,
-                100,
-                (64, 64),
+                MARGIN_Y,
                 &format!("PAGE {:03}/{:03} {hash}", j + 1, n_pages),
             );
-            image::imageops::overlay(&mut page, &info_text_image, 0, 0);
+            image::imageops::overlay(&mut page, &info_text_image, 0, MARGIN_Y);
 
             let msg_text_image =
-                create_text_image(PAGE_WIDTH, 72, (64, 48), &format!("{time} {message}"));
-            image::imageops::overlay(&mut page, &msg_text_image, 0, 80);
+                create_text_image(PAGE_WIDTH, MARGIN_Y, &format!("{time} {message}"));
+            image::imageops::overlay(&mut page, &msg_text_image, 0, MARGIN_Y + TEXT_HEIGHT);
 
             for (i, qr) in chunk.iter().enumerate() {
                 let i = i as i64;
-                let offset = (QRSIZE - qr.width() as i64) / 2;
                 image::imageops::overlay(
                     &mut page,
                     qr,
-                    MARGIN + i % 2 * (QRSIZE + MARGIN) + offset,
-                    HEADER_MARGIN + MARGIN / 2 + i / 2 * (QRSIZE + MARGIN / 2) + offset,
+                    MARGIN_X + i % 2 * (QRCODE_SIZE + MARGIN_X),
+                    2 * MARGIN_Y + 2 * TEXT_HEIGHT + i / 2 * (QRCODE_SIZE + MARGIN_Y),
                 );
             }
 
